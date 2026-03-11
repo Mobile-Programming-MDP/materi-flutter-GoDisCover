@@ -6,7 +6,6 @@ class Movie{
   final String backdropPath;
   final String releaseDate;
   final double voteAvarage;
-  final String imgUrl = "https://image.tmdb.org/t/p/u500";
   Movie({
     required this.id,
     required this.title,
@@ -19,13 +18,13 @@ class Movie{
 
   factory Movie.fromJson(Map<String, dynamic>json){
     return Movie(
-      id: json["id"] ?? '',
-      title: json["title"], 
-      overview: json["overview"] ?? '', 
-      posterPath: json["posterPath"] ?? '', 
-      backdropPath: json["backdropPath"] ?? '', 
-      releaseDate: json["releaseDate"] ?? '', 
-      voteAvarage: json["voteAvarage"]?? ''
+      id: (json["id"] as int?) ?? 0,
+      title: (json["title"] as String?) ?? '', 
+      overview: (json["overview"] as String?) ?? '', 
+      posterPath: (json["poster_path"] as String?) ?? '', 
+      backdropPath: (json["backdrop_path"] as String?) ?? '', 
+      releaseDate: (json["release_date"] as String?) ?? '', 
+      voteAvarage: ((json["vote_average"] as num?)?.toDouble()) ?? 0.0,
       );
   }
 }
