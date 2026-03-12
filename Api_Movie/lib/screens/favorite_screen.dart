@@ -43,14 +43,12 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                 final movie = favoriteMovies[index];
                 return ListTile(
                   leading: Image.network(
-                    'https://image.tmdb.org/t/p/w200${movie.posterPath}',
-                    width: 50,
+                    'https://image.tmdb.org/t/p/w500${movie.posterPath}',
+                    width: 100,
+                    height: 150,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.movie),
                   ),
                   title: Text(movie.title),
-                  subtitle: Text(movie.releaseDate),
                   onTap: () async {
                     await Navigator.push(
                       context,
@@ -60,6 +58,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                     );
                     _loadFavorites();
                   },
+                  
                 );
               },
             ),

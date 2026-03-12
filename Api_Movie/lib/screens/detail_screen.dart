@@ -86,9 +86,23 @@ class _DetailScreenState extends State<DetailScreen> {
                 fit: BoxFit.cover,
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Overview:',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Overview:',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      _toggleFavorite();
+                    },
+                    icon: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: isFavorite ? Colors.red : Colors.grey,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
               Text(widget.movie.overview),
