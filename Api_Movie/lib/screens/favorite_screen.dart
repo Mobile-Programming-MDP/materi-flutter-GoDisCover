@@ -41,24 +41,27 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
               itemCount: favoriteMovies.length,
               itemBuilder: (context, index) {
                 final movie = favoriteMovies[index];
-                return ListTile(
-                  leading: Image.network(
-                    'https://image.tmdb.org/t/p/w500${movie.posterPath}',
-                    width: 100,
-                    height: 150,
-                    fit: BoxFit.cover,
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: ListTile(
+                    leading: Image.network(
+                      'https://image.tmdb.org/t/p/w500${movie.posterPath}',
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    ),
+                    title: Text(movie.title),
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailScreen(movie: movie),
+                        ),
+                      );
+                      _loadFavorites();
+                    },
+                    
                   ),
-                  title: Text(movie.title),
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DetailScreen(movie: movie),
-                      ),
-                    );
-                    _loadFavorites();
-                  },
-                  
                 );
               },
             ),
