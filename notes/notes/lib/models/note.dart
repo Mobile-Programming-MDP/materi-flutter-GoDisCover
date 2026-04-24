@@ -6,6 +6,8 @@ class Note {
   final String tittle;
   final String description;
   String? imageBase64;
+  String? latitude;
+  String? longitude;
   Timestamp? createAt;
   Timestamp? uploadAt;
 
@@ -14,28 +16,34 @@ class Note {
     required this.tittle,
     required this.description,
     this.imageBase64,
+    this.latitude,
+    this.longitude,
     this.createAt,
     this.uploadAt,
   });
 
-  factory Note.fromDocument(DocumentSnapshot doc){
-    Map<String, dynamic> data = doc.data() as Map<String,dynamic>;
+  factory Note.fromDocument(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Note(
       id: doc.id,
-      tittle: data['tittle'], 
+      tittle: data['tittle'],
       description: data['description'],
       imageBase64: data['imageBase64'],
+      latitude: data['latitude'],
+      longitude: data['longitude'],
       createAt: data['createAt'],
       uploadAt: data['uploadAt'],
-      );
+    );
   }
-  Map <String,dynamic> toDocument(){
-    return{
+  Map<String, dynamic> toDocument() {
+    return {
       "tittle": tittle,
       "description": description,
-      "imageBase64" : imageBase64,
-      "createAt" : createAt,
-      "uploadAt" : uploadAt,
+      "imageBase64": imageBase64,
+      "latitude": latitude,
+      "longitude": longitude,
+      "createAt": createAt,
+      "uploadAt": uploadAt,
     };
   }
 }

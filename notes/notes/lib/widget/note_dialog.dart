@@ -1,8 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
-
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:notes/models/note.dart';
 import 'package:notes/models/note.dart';
+import 'package:notes/services/note_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class NoteDialog extends StatefulWidget {
   final Note? note;
@@ -15,13 +20,112 @@ class NoteDialog extends StatefulWidget {
 class _NoteDialogState extends State<NoteDialog> {
   final TextEditingController _tittleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
   File? _imageFile;
+  String? _base64Image;
+  String? _latitude;
+  String? _longitude;
+
   @override
   void initState() {
     super.initState();
     if (widget.note != null) {
       _tittleController.text = widget.note!.tittle;
       _descriptionController.text = widget.note!.description;
+      _base64Image = widget.note!.imageBase64;
+      _latitude = widget.note!.latitude;
+      _longitude = widget.note!.longitude;
+    }
+  }
+  Future<void> pickImageAndConvert() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      final bytes = await image.readAsBytes();
+      String base64String = base64Encode(bytes);
+      setState(() {
+        _base64Image = base64String;
+      });
+
+      print("Base64 String: $base64String");
+    } else {
+      print("No image selected.");
+    }
+  }
+    Future<void> _getLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Layanan lokasi dinonaktifkan.")),
+        );
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.deniedForever ||
+            permission == LocationPermission.denied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Izin lokasi ditolak.")),
+          );
+          return;
+        }
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: LocationSettings(accuracy: LocationAccuracy.high),
+      ).timeout(const Duration(seconds: 10));
+
+      setState(() {
+        _latitude = position.latitude.toString();
+        _longitude = position.longitude.toString();
+      });
+    } catch (e) {
+      debugPrint('Failed to retrieve location: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal mengambil lokasi.")),
+      );
+      setState(() {
+        _latitude = null;
+        _longitude = null;
+      });
+    }
+  }
+  Future<void> openMap() async {
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${_latitude},${_longitude}',
+    );
+    final success = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!mounted) return;
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal membuka peta.")),
+      );
+    }
+  }
+  Future<void> _compressAndEncodeImage() async {
+    if (_imageFile == null) return;
+    try {
+      final compressedImage = await FlutterImageCompress.compressWithFile(
+        _imageFile!.path,
+        quality: 50,
+      );
+
+      if (compressedImage == null) return;
+
+      setState(() {
+        _base64Image = base64Encode(compressedImage);
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Gagal memproses gambar")));
+      }
+      print(e.toString());
     }
   }
 
@@ -44,14 +148,80 @@ class _NoteDialogState extends State<NoteDialog> {
             child: Text('Image: '),
           ),
           Expanded(
-            child: _imageFile != null
-                ? Image.file(_imageFile!, fit: BoxFit.cover)
-                : (widget.note?.imageUrl != null && 
-                        Uri.parse(widget.note!.imageurl!,fit: BoxFit.cover) : Container()),
+            child: _base64Image != null
+                ? Image.memory(
+                    base64Decode(_base64Image!),
+                    width: 250,
+                    height: 250,
+                    fit: BoxFit.cover,
+                  )
+                : Center(
+                    child: Icon(
+                      Icons.add_a_photo,
+                      size: 50,
+                      color: Colors.grey,
+                    ),
+                  ),
+          ),TextButton(
+            //onPressed: _showImageSourceDialog,
+            onPressed: pickImageAndConvert,
+            child: const Text('Pick Image'),
+          ),TextButton(
+            onPressed: _getLocation,
+            child: const Text('Get Current Location'),
           ),
+          if (_latitude != null && _longitude != null)
+            Text('Location: ($_latitude, $_longitude)'),
+          //5. Button Open GMAP  
+          if (_latitude != null && _longitude != null)
+            TextButton(
+              onPressed: openMap,
+              child: const Text('Open in Maps'),
+            ),  
         ],
       ),
-      actions: [],
+       actions: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Cancel'),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (widget.note == null) {
+              NoteService.addNote(
+                Note(
+                  tittle: _tittleController.text,
+                  description: _descriptionController.text,
+                  imageBase64: _base64Image,
+                  latitude: _latitude,
+                  longitude: _longitude,
+                ),
+              ).whenComplete(() {
+                Navigator.of(context).pop();
+              });
+            } else {
+              
+              NoteService.updateNote(
+                Note(
+                  id: widget.note!.id,
+                  tittle: _tittleController.text,
+                  description: _descriptionController.text,
+                  createAt: widget.note!.createAt,
+                  imageBase64: _base64Image,
+                  latitude: _latitude,
+                  longitude: _longitude,
+                ),
+              ).whenComplete(() => Navigator.of(context).pop());
+            }
+          },
+          child: Text(widget.note == null ? 'Add' : 'Update'),
+        ),
+      ],
     );
   }
 }
