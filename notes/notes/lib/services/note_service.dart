@@ -14,7 +14,7 @@ class NoteService {
     Map<String, dynamic> newNote = {
       'tittle': note.tittle,
       "description": note.description,
-      "image_url": note.imageBase64,
+      "imageBase64": note.imageBase64,
       'latitude': note.latitude,
       'longitude': note.longitude,
       "createAt": FieldValue.serverTimestamp(),
@@ -49,7 +49,7 @@ class NoteService {
     Map<String, dynamic> updateNote = {
       'tittle': note.tittle,
       'description': note.description,
-      'imageurl': note.imageBase64,
+      'imageBase64': note.imageBase64,
       'latitude': note.latitude,
       'longitude': note.longitude,
       'createAt': note.createAt,
