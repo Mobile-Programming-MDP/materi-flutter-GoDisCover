@@ -67,4 +67,31 @@ class PostService {
   static Future<void> deletePost(Post post) async {
     await _postCollection.doc(post.id).delete();
   }
+  static Stream<List<Post>> getPostListByCategory(String category){
+    Query query = _postCollection;
+    if(category != null){
+      query = query.where('category',isEqualTo: category);
+    }
+    return _postCollection.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        return Post(
+          id: doc.id,
+          image: data['image'],
+          description: data['description'],
+          category: data['category'],
+          createdAt: data['createdAt'] != null
+              ? data['createdAt'] as Timestamp
+              : null,
+          updateAt: data['updateAt'] != null
+              ? data['updateAt'] as Timestamp
+              : null,
+          latitude: data['latitude'],
+          longtitude: data['longtitude'],
+          userId: data['userId'],
+          fullname: data['fullname'],
+        );
+      }).toList();
+    });
+  }
 }
